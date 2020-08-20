@@ -10,6 +10,7 @@ def get_num_matches_played(players_dict):
     else:
         return -1
 
+
 # Only players that have played the fewest number of matches are eligible to be put into the next match
 def select_player_candidates(players_dict):
     candidate_player_names = []

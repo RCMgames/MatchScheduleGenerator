@@ -60,7 +60,7 @@ class ScheduleGenerator:
                 self.match_schedule_dict[alliance_pos].append(chosen_player)
                 self.players_dict[chosen_player]['n_matches'] += 1
                 self.players_dict[chosen_player]['match_history'][match_pos] = 1
-                self.players_dict[chosen_player]['color_history'] = alliance_pos[0]
+                self.players_dict[chosen_player]['color_history'] += alliance_pos[0]
                 candidates.remove(chosen_player)
             match_pos += 1
 
@@ -69,3 +69,15 @@ class ScheduleGenerator:
         print(f"Number of matches in schedule: {match_pos}")
 
         return self.players_dict, self.match_schedule_dict
+
+    def score_schedule(self):
+        color_uniformity_scores = np.zeros(len(self.players_dict))
+        match_distance_scores = np.zeros(len(self.players_dict))
+        match_number_score = 0
+
+        for (index, (player_name, record)) in enumerate(self.players_dict.items()):
+            num_blue = record['color_history'].count('B')
+            num_red = record['color_history'].count('R')
+            color_uniformity_scores[index] = (num_blue - num_red) ** 2
+            print(record)
+            print(color_uniformity_scores)
