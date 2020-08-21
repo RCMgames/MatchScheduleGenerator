@@ -64,9 +64,13 @@ class ScheduleGenerator:
                 candidates.remove(chosen_player)
             match_pos += 1
 
+        self.players_dict = strip_match_history(self.players_dict, match_pos)
+
         print(self.players_dict)
         print(self.match_schedule_dict)
         print(f"Number of matches in schedule: {match_pos}")
+
+        self.score_schedule()
 
         return self.players_dict, self.match_schedule_dict
 
@@ -76,8 +80,20 @@ class ScheduleGenerator:
         match_number_score = 0
 
         for (index, (player_name, record)) in enumerate(self.players_dict.items()):
-            num_blue = record['color_history'].count('B')
-            num_red = record['color_history'].count('R')
+            match_history = record['match_history']
+            color_history = record['color_history']
+
+            num_consecutives = 0
+            for i in range(1, len(record['match_history'])):
+                if match_history[i - 1] == match_history[i] and match_history[i - 1] * match_history[i] != 0:
+                    num_consecutives += 1
+            match_distance_scores[index] = num_consecutives
+
+
+            num_blue = color_history.count('B')
+            num_red = color_history.count('R')
             color_uniformity_scores[index] = (num_blue - num_red) ** 2
-            print(record)
-            print(color_uniformity_scores)
+
+        print(record)
+        print(f"Match Distance Scores: {match_distance_scores}")
+        print(f"Color Uniformity Scores: {color_uniformity_scores}")
