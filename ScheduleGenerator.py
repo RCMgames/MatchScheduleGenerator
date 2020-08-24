@@ -60,8 +60,8 @@ class ScheduleGenerator:
             schedule_score, score_breakdown = self.score_schedule()
 
             if schedule_score < lowest_score:
-                self.optimal_match_schedule_dict = self.match_schedule_dict
-                self.optimal_players_dict = self.players_dict
+                self.optimal_match_schedule_dict = self.match_schedule_dict.copy()
+                self.optimal_players_dict = self.players_dict.copy()
                 lowest_score = schedule_score
                 lowest_score_breakdown = score_breakdown
 
@@ -140,11 +140,15 @@ class ScheduleGenerator:
         with open(self.file_name, 'w', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
 
-            csvwriter.writerow(['B1', 'B2', 'R1', 'R2'])
+            # Write header to CSV file
+            csvwriter.writerow(['Match', 'B1', 'B2', 'R1', 'R2'])
 
-            # List of 4 lists corresponding to teams playing on each alliance position B1, B2, R1, and R2
+            # List of 4 lists corresponding to teams playing on each alliance position B1, B2, R1, and R2 in each match
             position_schedules = [position_schedule for position_schedule in self.optimal_match_schedule_dict.values()]
 
-            for match_number in range(0, len(position_schedules[0])):
-                match_teams = [alliance_teams[match_number] for alliance_teams in position_schedules]
+            for match_num in range(0, len(position_schedules[0])):
+                # The match number (first match is 1) followed by the 4 teams playing in the match [#, B1, B2, R1, R2]
+                match_teams = [alliance_teams[match_num] for alliance_teams in position_schedules]
+                match_teams.insert(0, match_num+1)
+
                 csvwriter.writerow(match_teams)
