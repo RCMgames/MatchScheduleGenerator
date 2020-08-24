@@ -1,6 +1,9 @@
+from collections import OrderedDict
+
 import numpy as np
 from utils import *
 from random import randint
+import csv
 
 
 class ScheduleGenerator:
@@ -8,9 +11,13 @@ class ScheduleGenerator:
         self.player_names = []
         self.target_matches = 0
         self.n_trials = 0
+        self.file_name = ''
 
-        self.players_dict = {}
-        self.match_schedule_dict = {}
+        self.players_dict = OrderedDict()
+        self.match_schedule_dict = OrderedDict()
+
+        self.optimal_players_dict = OrderedDict()
+        self.optimal_match_schedule_dict = OrderedDict()
 
         self.verbose = verbose
 
@@ -31,6 +38,7 @@ class ScheduleGenerator:
             try:
                 self.target_matches = int(input("What is the least amount of matches each team should play? "))
                 self.n_trials = int(input("How many candidate match schedules should be generated? "))
+                self.file_name = input("Name of the schedule to be saved ") + '.csv'
                 break
             except ValueError:
                 print("Make sure you enter an integer value")
@@ -38,12 +46,11 @@ class ScheduleGenerator:
         print("============================================================================")
         print(f"Successfully initialized generation parameters!"
               f"\nPlayers: {self.player_names}"
-              f"\nTarget Matches: {self.target_matches} | Number of candidate schedules: {self.n_trials}")
+              f"\nTarget Matches: {self.target_matches} | Number of candidate schedules: {self.n_trials}"
+              f"\nWriting optimal schedule to {self.file_name}")
         print("============================================================================")
 
     def find_optimal_schedule(self):
-        optimal_schedule = {}
-        optimal_players_dict = {}
         # Randomly chosen large number
         lowest_score = 25 ** 4
         lowest_score_breakdown = {}
@@ -53,25 +60,28 @@ class ScheduleGenerator:
             schedule_score, score_breakdown = self.score_schedule()
 
             if schedule_score < lowest_score:
-                optimal_schedule = self.match_schedule_dict
-                optimal_players_dict = self.players_dict
+                self.optimal_match_schedule_dict = self.match_schedule_dict.copy()
+                self.optimal_players_dict = self.players_dict.copy()
                 lowest_score = schedule_score
                 lowest_score_breakdown = score_breakdown
 
         print(f"Lowest Score: {lowest_score}")
-        print(f"Optimal Schedule: {optimal_schedule}")
-        print(f"Optimal Player Dict: {optimal_players_dict}")
+        print(f"Optimal Schedule: {self.optimal_match_schedule_dict}")
+        print(f"Optimal Player Dict: {self.optimal_players_dict}")
         print(f"Score Breakdown: {lowest_score_breakdown}")
 
     def generate_schedule(self):
         max_num_matches = self.target_matches * len(self.player_names) * 100
         alliance_positions = ['B1', 'B2', 'R1', 'R2']
+
+        for player_name in self.player_names:
+            self.players_dict[player_name] = {'n_matches': 0,
+                                              'match_history': np.zeros(max_num_matches, dtype=np.int16),
+                                              'color_history': []}
+
+        self.match_schedule_dict = OrderedDict([(alliance_pos, []) for alliance_pos in alliance_positions])
+
         match_pos = 0
-
-        self.players_dict = {player_name: {'n_matches': 0, 'match_history': np.zeros(max_num_matches, dtype=np.int16),
-                                           'color_history': []} for player_name in self.player_names}
-        self.match_schedule_dict = {alliance_pos: [] for alliance_pos in alliance_positions}
-
         while get_num_matches_played(self.players_dict) < self.target_matches:
             candidates = select_player_candidates(players_dict=self.players_dict.copy())
             for alliance_pos in alliance_positions:
@@ -125,3 +135,20 @@ class ScheduleGenerator:
 
         return sum(match_distance_scores) + sum(color_uniformity_scores) + match_number_score, dict(
             m_d=match_distance_scores, c_u=color_uniformity_scores)
+
+    def write_schedule(self):
+        with open(self.file_name, 'w', newline='') as csvfile:
+            csvwriter = csv.writer(csvfile)
+
+            # Write header to CSV file
+            csvwriter.writerow(['Match', 'B1', 'B2', 'R1', 'R2'])
+
+            # List of 4 lists corresponding to teams playing on each alliance position B1, B2, R1, and R2 in each match
+            position_schedules = [position_schedule for position_schedule in self.optimal_match_schedule_dict.values()]
+
+            for match_num in range(0, len(position_schedules[0])):
+                # The match number (first match is 1) followed by the 4 teams playing in the match [#, B1, B2, R1, R2]
+                match_teams = [alliance_teams[match_num] for alliance_teams in position_schedules]
+                match_teams.insert(0, match_num+1)
+
+                csvwriter.writerow(match_teams)
