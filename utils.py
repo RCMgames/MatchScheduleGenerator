@@ -31,7 +31,7 @@ def select_player_candidates(players_dict):
 
 # Shortens the player's match history array to a length equal to the total number of matches in the schedule
 def strip_match_history(players_dict, num_matches):
-    for (player_name, record) in players_dict.items():
-        record['match_history'] = record['match_history'][:num_matches]
+    for player_record in players_dict.values():
+        player_record['match_history'] = player_record['match_history'][:num_matches]
 
     return players_dict

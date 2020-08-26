@@ -1,12 +1,18 @@
 from collections import OrderedDict
 
 import numpy as np
-from utils import *
+from utils import get_num_matches_played, select_player_candidates, strip_match_history
 from random import randint
 import csv
 
 
 class ScheduleGenerator:
+    """
+    Main Schedule Generator Class.
+    Arguments:
+        verbose: Boolean, default=False : Whether to log each candidate schedule and its score to the console
+    """
+
     def __init__(self, verbose=False):
         self.player_names = []
         self.target_matches = 0
@@ -55,7 +61,7 @@ class ScheduleGenerator:
         lowest_score = 25 ** 4
         lowest_score_breakdown = {}
 
-        for i in range(0, self.n_trials):
+        for _ in range(0, self.n_trials):
             self.generate_schedule()
             schedule_score, score_breakdown = self.score_schedule()
 
@@ -111,12 +117,12 @@ class ScheduleGenerator:
         color_uniformity_scores = np.zeros(len(self.players_dict))
         match_distance_scores = np.zeros(len(self.players_dict))
 
-        for (index, (player_name, record)) in enumerate(self.players_dict.items()):
-            match_history = record['match_history']
-            color_history = record['color_history']
+        for (index,  player_record) in enumerate(self.players_dict.values()):
+            match_history = player_record['match_history']
+            color_history = player_record['color_history']
 
             num_consecutives = 0
-            for i in range(1, len(record['match_history'])):
+            for i in range(1, len(player_record['match_history'])):
                 if match_history[i - 1] == match_history[i] and match_history[i - 1] * match_history[i] != 0:
                     num_consecutives += 1
             match_distance_scores[index] = num_consecutives ** 2
@@ -125,10 +131,10 @@ class ScheduleGenerator:
             num_red = color_history.count('R')
             color_uniformity_scores[index] = (num_blue - num_red) ** 2
 
-        match_number_score = (self.target_matches - record['n_matches']) ** 2
+        match_number_score = (self.target_matches - player_record['n_matches']) ** 2
 
         if self.verbose:
-            print(record)
+            print(player_record)
             print(f"Match Distance Scores: {match_distance_scores}")
             print(f"Color Uniformity Scores: {color_uniformity_scores}")
             print(f"Match Number Score: {match_number_score}")
@@ -149,6 +155,6 @@ class ScheduleGenerator:
             for match_num in range(0, len(position_schedules[0])):
                 # The match number (first match is 1) followed by the 4 teams playing in the match [#, B1, B2, R1, R2]
                 match_teams = [alliance_teams[match_num] for alliance_teams in position_schedules]
-                match_teams.insert(0, match_num+1)
+                match_teams.insert(0, match_num + 1)
 
                 csvwriter.writerow(match_teams)
