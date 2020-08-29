@@ -7,6 +7,7 @@ import csv
 
 
 class ScheduleGenerator:
+
     """
     Main Schedule Generator Class.
     Arguments:
@@ -77,7 +78,7 @@ class ScheduleGenerator:
         print(f"Score Breakdown: {lowest_score_breakdown}")
 
     def generate_schedule(self):
-        max_num_matches = self.target_matches * len(self.player_names) * 100
+        max_num_matches = self.target_matches * len(self.player_names) * 3
         alliance_positions = ['B1', 'B2', 'R1', 'R2']
 
         for player_name in self.player_names:
@@ -86,11 +87,15 @@ class ScheduleGenerator:
                                               'color_history': []}
 
         self.match_schedule_dict = OrderedDict([(alliance_pos, []) for alliance_pos in alliance_positions])
-
         match_pos = 0
         while get_num_matches_played(self.players_dict) < self.target_matches:
-            candidates = select_player_candidates(players_dict=self.players_dict.copy())
+            ranked_candidates = select_player_candidates(players_dict=self.players_dict.copy())
+            current_rank = 1
             for alliance_pos in alliance_positions:
+                candidates = ranked_candidates[current_rank]
+                if len(candidates) <= 1:
+                    current_rank += 1
+
                 chosen_player = candidates[randint(0, len(candidates) - 1)]
 
                 if self.verbose:
@@ -117,7 +122,7 @@ class ScheduleGenerator:
         color_uniformity_scores = np.zeros(len(self.players_dict))
         match_distance_scores = np.zeros(len(self.players_dict))
 
-        for (index,  player_record) in enumerate(self.players_dict.values()):
+        for (index, player_record) in enumerate(self.players_dict.values()):
             match_history = player_record['match_history']
             color_history = player_record['color_history']
 
@@ -131,7 +136,7 @@ class ScheduleGenerator:
             num_red = color_history.count('R')
             color_uniformity_scores[index] = (num_blue - num_red) ** 2
 
-        match_number_score = (self.target_matches - player_record['n_matches']) ** 2
+        match_number_score = (self.target_matches - player_record['n_matches'])
 
         if self.verbose:
             print(player_record)
@@ -151,7 +156,8 @@ class ScheduleGenerator:
 
             # List of 4 lists corresponding to teams playing on each alliance position B1, B2, R1, and R2 in each match
             position_schedules = [position_schedule for position_schedule in self.optimal_match_schedule_dict.values()]
-
+            print(position_schedules)
+            print("WE WRITING")
             for match_num in range(0, len(position_schedules[0])):
                 # The match number (first match is 1) followed by the 4 teams playing in the match [#, B1, B2, R1, R2]
                 match_teams = [alliance_teams[match_num] for alliance_teams in position_schedules]
