@@ -7,6 +7,7 @@ import csv
 
 
 class ScheduleGenerator:
+
     """
     Main Schedule Generator Class.
     Arguments:
@@ -117,12 +118,13 @@ class ScheduleGenerator:
         color_uniformity_scores = np.zeros(len(self.players_dict))
         match_distance_scores = np.zeros(len(self.players_dict))
 
-        for (index,  player_record) in enumerate(self.players_dict.values()):
+        for (index, player_record) in enumerate(self.players_dict.values()):
             match_history = player_record['match_history']
             color_history = player_record['color_history']
 
             num_consecutives = 0
             for i in range(1, len(player_record['match_history'])):
+                # Count number of consecutive 1 values
                 if match_history[i - 1] == match_history[i] and match_history[i - 1] * match_history[i] != 0:
                     num_consecutives += 1
             match_distance_scores[index] = num_consecutives ** 2
@@ -134,7 +136,6 @@ class ScheduleGenerator:
         match_number_score = (self.target_matches - player_record['n_matches']) ** 2
 
         if self.verbose:
-            print(player_record)
             print(f"Match Distance Scores: {match_distance_scores}")
             print(f"Color Uniformity Scores: {color_uniformity_scores}")
             print(f"Match Number Score: {match_number_score}")
